@@ -1,0 +1,38 @@
+{
+  "name": "${localWorkspaceFolderBasename}",
+  "dockerComposeFile": "./docker/Compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        // 改行コードを設定
+        "files.eol": "\n",
+        // 保存時にフォーマット
+        "editor.formatOnSave": true,
+        // デフォルトフォーマッターをprettierに設定
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        // prettier設定
+        "prettier.printWidth": 200,
+        // jsonはvscodeのフォーマッターを利用
+        "[jsonc]": {
+          "editor.defaultFormatter": "vscode.json-language-features"
+        },
+        // typescriptのSDKは現在ディレクトリのものを指定
+        "typescript.tsdk": "node_modules/typescript/lib"
+      },
+      "extensions": [
+        // vscode日本語化
+        "MS-CEINTL.vscode-language-pack-ja",
+        // フォーマッター
+        "esbenp.prettier-vscode",
+        // git
+        "eamodio.gitlens",
+        // react
+        "planbcoding.vscode-react-refactor",
+        // codex
+        "openai.chatgpt"
+      ]
+    }
+  }
+}
