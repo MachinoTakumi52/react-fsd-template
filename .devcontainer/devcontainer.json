@@ -19,7 +19,7 @@
           "editor.defaultFormatter": "vscode.json-language-features"
         },
         // typescriptのSDKは現在ディレクトリのものを指定
-        "typescript.tsdk": "node_modules/typescript/lib"
+        "js/ts.tsdk.path": "node_modules/typescript/lib"
       },
       "extensions": [
         // vscode日本語化
