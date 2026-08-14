@@ -8,7 +8,7 @@
 
 FSDは、フロントエンドのコードを責務ごとに **Layer・Slice・Segment** へ分割し、コードの責任範囲と依存関係を明確にするための設計方法論である。
 
-本プロジェクトでは、FSDを利用することで以下を実現する。
+FSDを採用することで、以下を実現する。
 
 - コードの配置場所を明確にする
 - 機能やドメインごとの責務を明確にする
@@ -34,7 +34,31 @@ shared
 
 上位になるほどアプリケーション固有の責務を持ち、下位になるほど汎用的な責務を持つ。
 
-また、Layer間の依存は **上位Layerから下位Layerへの方向のみ許可する**。
+各Layerの概要は以下となる。
+
+```text
+app
+→ アプリケーション全体の構成・初期化
+
+pages
+→ 画面
+
+widgets
+→ 複数の要素を組み合わせた共通UI
+
+features
+→ 業務上の操作
+
+entities
+→ 業務上の概念・ドメイン
+
+shared
+→ 業務ドメインに依存しない汎用処理・UI
+```
+
+Layer間の依存は、**上位Layerから下位Layerへの方向のみ許可する。**
+
+例えば `pages` は、自分より下位に存在するLayerを直接利用できる。
 
 ```text
 pages → widgets     OK
@@ -48,7 +72,15 @@ features → shared   OK
 entities → shared   OK
 ```
 
-隣接するLayerを経由する必要はなく、自分より下位のLayerであれば直接依存してよい。
+隣接するLayerを経由する必要はない。
+
+```text
+pages → entities
+pages → shared
+features → shared
+```
+
+のように、複数Layerを飛ばした依存も許可する。
 
 一方、下位Layerから上位Layerへの依存は禁止する。
 
@@ -57,6 +89,8 @@ entities → features   NG
 features → pages      NG
 shared → entities     NG
 ```
+
+依存方向を一方向に制限することで、下位Layerが上位Layerの都合に左右されることを防ぎ、変更容易性と再利用性を維持する。
 
 ---
 
@@ -74,11 +108,13 @@ src/
 └─ shared/
 ```
 
-それぞれのLayerは、次の責務を持つ。
-
 ### app
 
-アプリケーション全体の構成や初期化を担当する。
+`app` は、**アプリケーション全体の構成・初期化**を担当するLayerである。
+
+特定の画面や業務機能ではなく、アプリケーションそのものを動作させるために必要な設定や構成を配置する。
+
+基本構成は以下とする。
 
 ```text
 app/
@@ -88,18 +124,93 @@ app/
 └─ styles/
 ```
 
-主に以下を配置する。
+必要のないフォルダは事前に作成せず、必要になった段階で追加する。
 
-- Router設定
-- Provider
-- Theme設定
-- アプリケーション初期化処理
-- グローバルStyle
-- Layout
+#### routes
 
-業務ロジックは原則として配置しない。
+アプリケーション全体のルーティング設定を配置する。
 
-HeaderやSidebarなどをアプリケーション全体で使用する場合は、Widgetとして定義したものをLayoutから利用する。
+URLとPageの対応関係や、Layoutとの関連を定義する。
+
+```text
+app/
+└─ routes/
+   └─ router.tsx
+```
+
+```tsx
+const router = createBrowserRouter([
+  {
+    element: <AppLayout />,
+    children: [
+      {
+        path: "/users",
+        element: <UsersPage />,
+      },
+      {
+        path: "/settings",
+        element: <SettingsPage />,
+      },
+    ],
+  },
+]);
+```
+
+Pageそのものは `pages` に配置し、`routes` ではそれらを組み合わせてアプリケーションの画面遷移を定義する。
+
+#### providers
+
+アプリケーション全体へ適用するProviderを配置する。
+
+```text
+app/
+└─ providers/
+   ├─ QueryProvider.tsx
+   ├─ ThemeProvider.tsx
+   └─ AppProviders.tsx
+```
+
+例えば以下が対象となる。
+
+- React Query
+- Theme
+- 認証Context
+- アプリケーション全体で使用する状態管理
+- その他アプリケーション全体を囲むProvider
+
+複数のProviderを使用する場合は、`AppProviders` などでまとめて管理してよい。
+
+```tsx
+export const AppProviders = ({ children }: Props) => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>{children}</ThemeProvider>
+    </QueryClientProvider>
+  );
+};
+```
+
+特定のPageやFeatureでしか使用しないProviderは `app` に配置しない。
+
+#### layouts
+
+複数のPageで共通する画面構造を配置する。
+
+```text
+app/
+└─ layouts/
+   ├─ AppLayout.tsx
+   └─ AuthLayout.tsx
+```
+
+例えば以下のような構造をLayoutとして定義する。
+
+```text
+AppLayout
+├─ Header
+├─ Sidebar
+└─ Outlet
+```
 
 ```tsx
 export const AppLayout = () => {
@@ -115,9 +226,67 @@ export const AppLayout = () => {
 };
 ```
 
+HeaderやSidebarそのものは `widgets` に配置し、Layoutではそれらを組み合わせてアプリケーション全体の画面構造を定義する。
+
+ログイン前後などで画面構造が異なる場合は、用途に応じてLayoutを分割してよい。
+
+```text
+layouts/
+├─ AppLayout.tsx
+└─ AuthLayout.tsx
+```
+
+#### styles
+
+アプリケーション全体に適用するStyleを配置する。
+
+```text
+app/
+└─ styles/
+   ├─ global.css
+   └─ reset.css
+```
+
+例えば以下を配置する。
+
+- Global CSS
+- Reset CSS
+- 全体に適用するTypography設定
+- アプリケーション全体の基本Style
+
+特定のComponentやPageでしか使用しないStyleは、そのComponentやPageの近くに配置する。
+
+#### appに配置しないもの
+
+`app` はアプリケーション全体を構成するLayerであり、業務ドメインや特定画面の実装を配置する場所ではない。
+
+```text
+User型
+→ entities
+
+User検索処理
+→ pages / features
+
+User一覧画面
+→ pages
+
+Header
+→ widgets
+
+汎用Button
+→ shared
+
+共通API Client
+→ shared/api
+```
+
+`app` には、**アプリケーション全体を起動・構成・接続するためのコード**を配置する。
+
+---
+
 ### pages
 
-ルーティングされる画面単位のコードを配置する。
+`pages` は、**ルーティングされる画面単位のコード**を配置するLayerである。
 
 ```text
 pages/
@@ -132,9 +301,9 @@ pages/
    └─ index.ts
 ```
 
-その画面でしか使用しないUI・状態・API処理などはPage内に配置する。
+Page内でのみ利用するUI・状態・API処理などを配置できる。
 
-例えばUser一覧画面専用であれば、以下のようなものもPage内に配置してよい。
+例えば以下がUsers画面でしか使用されない場合は、Page内に配置する。
 
 - User検索フォーム
 - User一覧テーブル
@@ -143,13 +312,17 @@ pages/
 - Page専用Hooks
 - Page専用Dialog
 
-本プロジェクトではPageを比較的厚くすることを許容する。
+本プロジェクトでは、**Pageを比較的厚くすることを許容する。**
+
+ドメイン知識を持っているという理由だけで、最初から `features` や `entities` へ分割しない。
+
+---
 
 ### widgets
 
-複数の下位Layerを組み合わせた、まとまりのあるUIブロックを配置する。
+`widgets` は、**複数の下位Layerを組み合わせた、まとまりのあるUIブロック**を配置するLayerである。
 
-代表例として、HeaderやSidebarなどがある。
+代表例としてHeaderやSidebarなどがある。
 
 ```text
 widgets/
@@ -157,7 +330,7 @@ widgets/
 └─ sidebar/
 ```
 
-例えばHeaderは、以下のような下位Layerの要素を組み合わせて構成できる。
+例えばHeaderは、以下のように下位Layerの要素を組み合わせて構成できる。
 
 ```text
 Header
@@ -178,15 +351,19 @@ Header
 → widgets/header
 ```
 
-単にサイズが大きいコンポーネントだからWidgetにするのではなく、**複数Pageから利用される、意味のあるUIブロックであること**を判断基準とする。
+単にサイズが大きいコンポーネントだからWidgetにするのではない。
 
-1つのPageでしか使用しない場合は、Page内に配置してよい。
+**複数Pageから利用される、意味のあるUIブロックであること**を判断基準とする。
+
+1つのPageでしか使用しないUIは、大きなコンポーネントであってもPage内に配置してよい。
+
+---
 
 ### features
 
-ユーザーが行う業務上の操作を表現する。
+`features` は、**ユーザーが行う業務上の操作**を表現するLayerである。
 
-Featureは、基本的に **業務上の動詞** と考える。
+基本的には **業務上の動詞** と考える。
 
 ```text
 Search User
@@ -208,6 +385,14 @@ features/
    └─ index.ts
 ```
 
+例えば以下のような操作がFeatureの候補となる。
+
+```text
+Userを検索する
+Userを更新する
+商品をカートに追加する
+```
+
 ただし、操作であるという理由だけですべてをFeature化しない。
 
 ```text
@@ -218,13 +403,17 @@ close-user-dialog
 change-user-filter
 ```
 
-のように細かく分割するとSliceが増えすぎるため、独立した機能として切り出す価値があるものだけをFeatureとする。
+のように細かく分割するとSliceが増えすぎる。
+
+独立した機能として切り出す価値があるものだけをFeatureとする。
+
+---
 
 ### entities
 
-業務ドメインそのものを表現する。
+`entities` は、**業務ドメインそのもの**を表現するLayerである。
 
-Entityは、基本的に **業務上の名詞** と考える。
+基本的には **業務上の名詞** と考える。
 
 ```text
 User
@@ -248,7 +437,7 @@ entities/
    └─ index.ts
 ```
 
-各Segmentの役割は例えば以下となる。
+Entity内部の役割は、例えば以下のように考える。
 
 ```text
 model
@@ -276,7 +465,7 @@ type User = {
 <UserCard user={user} />
 ```
 
-のようなEntityを表現するUIを配置できる。
+のようなEntityそのものを表現するUIを配置できる。
 
 一方、
 
@@ -288,9 +477,11 @@ Userを削除する
 
 といった操作はEntityではなく、PageまたはFeatureの責務となる。
 
+---
+
 ### shared
 
-業務ドメインに依存しない汎用的なコードを配置する。
+`shared` は、**業務ドメインに依存しない汎用的なコード**を配置するLayerである。
 
 ```text
 shared/
@@ -303,12 +494,23 @@ shared/
 `shared/ui` には、例えば以下のような汎用コンポーネントを配置する。
 
 ```text
+shared/ui/
+├─ button/
+├─ text-field/
+├─ select/
+├─ modal/
+├─ search-input/
+├─ date-picker/
+└─ data-table/
+```
+
+配置例は以下となる。
+
+```text
 Button
 TextField
-Select
 SearchInput
 Modal
-DatePicker
 Pagination
 DataTable
 ```
@@ -319,7 +521,7 @@ DataTable
 <SearchInput value={keyword} onChange={setKeyword} onSearch={handleSearch} />
 ```
 
-がUserやProductなどの業務知識を持たないのであれば、`shared/ui` に配置できる。
+が `User`、`Product`、`Order` などの業務知識を持たないのであれば、`shared/ui` に配置できる。
 
 一方、
 
@@ -331,7 +533,13 @@ ProductCard
 
 のように業務ドメインを持つものはSharedには配置しない。
 
-Sharedへ配置するか迷った場合は、**別の業務システムへそのまま持っていっても成立するか**を一つの判断基準とする。
+Sharedへ配置する場合は、以下を判断基準とする。
+
+- 業務ドメインを知らなくても成立する
+- 複数箇所で利用する価値がある
+- UIや振る舞いを統一する価値がある
+
+迷った場合は、**別の業務システムへそのまま持っていっても成立するか**を判断基準の一つとする。
 
 ---
 
@@ -347,7 +555,7 @@ Layer
 
 ### Slice
 
-Sliceは、Layer内部を業務・機能単位で分割する単位である。
+Sliceは、**Layer内部を業務・機能単位で分割する単位**である。
 
 例えば、
 
@@ -370,7 +578,16 @@ features/search-user
 entities/user
 ```
 
-の `users`、`header`、`search-user`、`user` がそれぞれSliceとなる。
+の、
+
+```text
+users
+header
+search-user
+user
+```
+
+がそれぞれSliceとなる。
 
 Sliceを持つLayerは以下とする。
 
@@ -381,11 +598,27 @@ features
 entities
 ```
 
-`app` と `shared` はSliceを持たず、Layer直下をSegmentや用途別の構造で整理する。
+`app` と `shared` はSliceを持たない。
+
+```text
+app/
+├─ routes/
+├─ providers/
+├─ layouts/
+└─ styles/
+
+shared/
+├─ ui/
+├─ api/
+├─ lib/
+└─ config/
+```
+
+---
 
 ### Segment
 
-Segmentは、Slice内部のコードを技術的な役割によって分類する単位である。
+Segmentは、**Slice内部のコードを技術的な役割によって分類する単位**である。
 
 本プロジェクトでは主に以下を使用する。
 
@@ -397,7 +630,9 @@ lib
 config
 ```
 
-`ui` にはUIコンポーネントや表示ロジックを配置する。
+#### ui
+
+UIコンポーネントや表示ロジックを配置する。
 
 ```text
 ui/
@@ -405,7 +640,9 @@ ui/
 └─ UserAvatar.tsx
 ```
 
-`model` には型・状態・バリデーション・ドメインロジックなどを配置する。
+#### model
+
+型・状態・バリデーション・ドメインロジックなどを配置する。
 
 ```text
 model/
@@ -414,7 +651,9 @@ model/
 └─ store.ts
 ```
 
-`api` にはAPI通信に関する処理を配置する。
+#### api
+
+API通信に関する処理を配置する。
 
 ```text
 api/
@@ -422,20 +661,26 @@ api/
 └─ updateUser.ts
 ```
 
-`lib` には、そのSlice内部で利用する補助処理を配置する。
+#### lib
+
+そのSlice内部で利用する補助処理を配置する。
 
 ```text
 lib/
 └─ formatUserName.ts
 ```
 
-`config` には、そのSliceや機能に関する設定を配置する。
+#### config
 
-すべてのSliceにすべてのSegmentを作る必要はない。必要なものだけ作成する。
+そのSliceや機能に関する設定を配置する。
+
+すべてのSliceにすべてのSegmentを作成する必要はない。
+
+**必要なSegmentのみ作成する。**
 
 ---
 
-## 開発方針
+## 開発の基本方針
 
 ### Pageを起点に実装する
 
@@ -478,7 +723,7 @@ pages
 widgets / features / entities / shared
 ```
 
-抽出先は次の考え方を基本とする。
+抽出先は以下を基本とする。
 
 ```text
 複数Pageで利用する大きなUI
@@ -496,15 +741,22 @@ widgets / features / entities / shared
 
 ただし、再利用されたという理由だけで必ず抽出するわけではない。
 
-抽出することで責務が明確になるか、理解しやすくなるか、Sliceが細かくなりすぎないかを考慮する。
+以下も考慮する。
+
+- 責務が明確か
+- 独立した機能として意味があるか
+- 抽出することで理解しやすくなるか
+- Sliceが細かくなりすぎないか
 
 ---
 
 ## 依存とImportのルール
 
-### 同一Slice内
+### 同一Slice内の依存
 
-同一Sliceの内部では、Segment間や同一Segment内での依存を許可する。
+同一Slice内部では、Segment間や同一Segment内での依存を許可する。
+
+例えば、
 
 ```text
 entities/user/
@@ -515,7 +767,7 @@ entities/user/
    └─ types.ts
 ```
 
-例えば `UserCard.tsx` から次のように参照してよい。
+`UserCard.tsx` から以下のように参照してよい。
 
 ```tsx
 import { UserAvatar } from "./UserAvatar";
@@ -525,17 +777,19 @@ import type { User } from "../model/types";
 同じSlice内部であれば、
 
 ```text
-ui → ui
-ui → model
-ui → api
-model → api
+ui → ui      OK
+ui → model   OK
+ui → api     OK
+model → api  OK
 ```
 
-などの依存は問題ない。
+などの依存を許可する。
 
-FSDの依存制約は、Segment間ではなく、主にLayerとSliceの境界で考える。
+FSDの依存制約は、Segment間ではなく、主に **LayerとSliceの境界** で考える。
 
-### 同一Layerの別Slice
+---
+
+### 同一LayerのSlice間依存
 
 同じLayerに存在する別Sliceへの依存は原則として禁止する。
 
@@ -547,7 +801,7 @@ features/update-user
 
 のような依存は行わない。
 
-Entityも同様に、
+Entityも同様とする。
 
 ```text
 entities/order
@@ -558,6 +812,8 @@ entities/user
 のような直接依存は原則として行わない。
 
 Entity間の依存が避けられない場合は、個別に設計を検討する。
+
+---
 
 ### Public API
 
@@ -589,6 +845,8 @@ import { UserSearchForm } from "@/features/search-user";
 import { UserSearchForm } from "@/features/search-user/ui/UserSearchForm";
 ```
 
+Public APIは、**Slice外部に何を公開するかを定義する境界**として扱う。
+
 一方、同じSlice内部ではPublic APIを経由せず、相対importを使用する。
 
 ```ts
@@ -613,9 +871,19 @@ pages/
       └─ UserDetailDialog.tsx
 ```
 
-1ファイルしか存在しないフォルダをコンポーネントごとに作成しない。
+以下のように、1ファイルだけのフォルダをコンポーネントごとに作成することは避ける。
 
-コンポーネントに関連するファイルが複数存在する場合のみ、専用フォルダへの分割を検討する。
+```text
+ui/
+├─ search/
+│  └─ UserSearchForm.tsx
+├─ table/
+│  └─ UserTable.tsx
+└─ detail/
+   └─ UserDetailDialog.tsx
+```
+
+コンポーネント専用の関連ファイルが複数存在する場合のみ、専用フォルダへの分割を検討する。
 
 ```text
 ui/
@@ -627,9 +895,17 @@ ui/
    └─ UserSearchForm.test.tsx
 ```
 
-### Pageコンポーネント
+---
 
-Page Sliceのルートコンポーネントには `<Name>Page.tsx` の命名規則を使用する。
+### Pageコンポーネントの命名
+
+Page Sliceのルートコンポーネントには、
+
+```text
+<Name>Page.tsx
+```
+
+の命名規則を使用する。
 
 ```text
 users
@@ -642,7 +918,7 @@ settings
 → SettingsPage.tsx
 ```
 
-`Page` suffixは、Routerから表示されるPage Sliceのルートコンポーネントであることを表す。
+`Page` suffixは、**Routerから表示されるPage Sliceのルートコンポーネント**であることを表す。
 
 子コンポーネントには `Page` を付けない。
 
@@ -659,7 +935,9 @@ Page SliceのPublic APIからは、原則としてルートPageのみを公開�
 export { UsersPage } from "./ui/UsersPage";
 ```
 
-### Asset
+---
+
+### Assetの配置
 
 `assets` Segmentは原則として作成しない。
 
@@ -710,16 +988,38 @@ app/
 
 以下のような設計は行わない。
 
-- 下位Layerから上位Layerへの依存
-- 同一Layerの別Sliceへの直接依存
-- Slice内部へのDeep Import
-- Sharedへの業務ドメイン依存コードの配置
-- Featureの過度な細分化
-- 将来利用する可能性だけを理由とした過度な共通化
-- 使用しないSegmentの事前作成
-- 1ファイルしか存在しない不要なフォルダの大量作成
+### 下位Layerから上位Layerへ依存する
 
-特に、以下のように細かな操作をすべてFeature化することは避ける。
+```text
+entities → features
+shared → entities
+features → pages
+```
+
+### 同一Layerの別Sliceへ直接依存する
+
+```text
+features/A → features/B
+```
+
+### Slice内部へDeep Importする
+
+```ts
+import { Foo } from "@/features/foo/ui/Foo";
+```
+
+Slice外部からはPublic APIを使用する。
+
+### Sharedに業務ドメインを持たせる
+
+```text
+shared/ui/UserTable
+shared/ui/OrderSearchForm
+```
+
+のように、業務ドメインを持つコードをSharedへ配置しない。
+
+### Featureを過度に細分化する
 
 ```text
 features/
@@ -729,18 +1029,35 @@ features/
 └─ select-row/
 ```
 
-また、
+のように細かなUI操作をすべてFeature化しない。
+
+### 将来利用する可能性だけで共通化する
+
+「将来使いそう」という理由だけで `shared`、`features`、`entities` へ抽出しない。
+
+実際に責務や再利用性が明確になってから抽出する。
+
+### 不要なSegmentを作成する
 
 ```text
-shared/ui/UserTable
-shared/ui/OrderSearchForm
+ui/
+model/
+api/
+lib/
+config/
 ```
 
-のように業務ドメインを持つコンポーネントをSharedへ配置しない。
+をテンプレートとして毎回すべて作成しない。
+
+必要なSegmentのみ作成する。
+
+### 不要なフォルダ階層を作成する
+
+1ファイルしか存在しないフォルダを大量に作成せず、必要になるまではフラットな構造を維持する。
 
 ---
 
-## 開発の進め方
+## 開発時の基本フロー
 
 新しい画面を開発する場合は、以下の流れを基本とする。
 
@@ -761,5 +1078,19 @@ Page内部でComponentを分割
         ↓
 必要なものだけ下位Layerへ抽出
 ```
+
+基本的には、
+
+```text
+まずPageに置く
+      ↓
+実装する
+      ↓
+責務・再利用性が見える
+      ↓
+必要なものだけ抽出する
+```
+
+という流れで開発する。
 
 最初から完成形のFSD構造を設計するのではなく、Pageを起点として実装し、責務や再利用性が明確になった段階で適切なLayerへ抽出する。
