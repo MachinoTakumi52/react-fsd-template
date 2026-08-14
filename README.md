@@ -1,7 +1,8 @@
 ## 本リポジトリについて
 
 本リポジトリは、Feature-Sliced Design（FSD）を採用した React アプリケーションのテンプレートである。  
-UI ライブラリには Material UI、フォーム管理には React Hook Form、バリデーションには Zod を採用していいる。
+UI ライブラリには Material UI、フォーム管理には React Hook Form、バリデーションには Zod を採用していいる。  
+FSDについてと開発規約については[このリンク](https://github.com/MachinoTakumi52/react-fsd-template/tree/main/react-fsd-template#%E3%83%95%E3%83%AD%E3%83%B3%E3%83%88%E3%82%A8%E3%83%B3%E3%83%89%E9%96%8B%E7%99%BA%E8%A6%8F%E7%B4%84)を参照
 
 ## 開発の流れ
 
