@@ -1,10 +1,7 @@
 ## 本リポジトリについて
 
-本リポジトリは、Feature-Sliced Design（FSD）を採用した React アプリケーションのテンプレートです。  
-React、TypeScript、Vite をベースに、責務ごとにコードを分割しやすいディレクトリ構成とパスエイリアスを用意しています。
-
-UI ライブラリには Material UI、フォーム管理には React Hook Form、バリデーションには Zod を採用しています。  
-開発環境は Dev Container に対応しているため、VS Code と Docker を利用して統一された環境で開発を始められます。
+本リポジトリは、Feature-Sliced Design（FSD）を採用した React アプリケーションのテンプレートである。  
+UI ライブラリには Material UI、フォーム管理には React Hook Form、バリデーションには Zod を採用していいる。
 
 ## 開発の流れ
 
