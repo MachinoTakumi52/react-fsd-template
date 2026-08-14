@@ -6,5 +6,8 @@ ENV TZ=Asia/Tokyo
 
 # apt
 RUN apt-get update \
-&& apt-get install -y --no-install-recommends git \
-&& rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends \
+        git \
+        ca-certificates \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
