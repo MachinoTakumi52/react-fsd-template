@@ -38,6 +38,12 @@ export default defineConfig({
     // 使用していない import や変数は warn で見えるようにする。
     "no-unused-vars": "warn",
 
+    // var ではなく const / let を強制する。
+    "no-var": "error",
+
+    // 関数宣言より arrow 関数を優先する。
+    "func-style": ["error", "expression", { allowArrowFunctions: true }],
+
     // 不要な console 出力は警告対象にする。
     "no-console": "warn",
 
