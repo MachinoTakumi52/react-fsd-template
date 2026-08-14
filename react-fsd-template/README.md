@@ -128,35 +128,44 @@ app/
 
 #### routes
 
-アプリケーション全体のルーティング設定を配置する。
+アプリケーション全体のルーティング設定を `app/routes` に配置する。
 
-URLとPageの対応関係や、Layoutとの関連を定義する。
+URLとPageの対応関係やLayoutとの関連を定義し、次の規約に従う。
+
+- ルーターのProviderは `app.tsx` に配置し、アプリケーション全体を `BrowserRouter` で囲む。
+- URLとPageの対応関係は `routes/app-routes.tsx` に集約する。
+- ルートとして表示する画面は `pages` に配置し、各SliceのPublic API（`index.ts`）から参照する。
+- アプリ内の画面遷移には、ページ全体を再読み込みしない `Link` または `NavLink` を使用する。
+- 定義されていないURLは `path="*"` でNotFound画面へフォールバックする。
 
 ```text
 app/
+├─ app.tsx
 └─ routes/
-   └─ router.tsx
+   └─ app-routes.tsx
 ```
 
 ```tsx
-const router = createBrowserRouter([
-  {
-    element: <AppLayout />,
-    children: [
-      {
-        path: "/users",
-        element: <UsersPage />,
-      },
-      {
-        path: "/settings",
-        element: <SettingsPage />,
-      },
-    ],
-  },
-]);
+export const AppRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+};
 ```
 
 Pageそのものは `pages` に配置し、`routes` ではそれらを組み合わせてアプリケーションの画面遷移を定義する。
+
+現在定義しているルートは以下の通り。
+
+| パス     | Page           |
+| -------- | -------------- |
+| `/`      | `HomePage`     |
+| `/about` | `AboutPage`    |
+| `*`      | `NotFoundPage` |
 
 #### providers
 
