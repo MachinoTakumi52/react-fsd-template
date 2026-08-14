@@ -1,35 +1,62 @@
+# GitHub Actions上で表示されるWorkflow名。
 name: Oxlint
 
+# Workflowを実行するタイミングを定義する。
 on:
+  # Pull Requestが作成・更新されたときに実行する。
   pull_request:
+    # mainブランチをマージ先とするPull Requestだけを対象にする。
     branches:
       - main
 
+# Workflowに付与するGitHub Tokenの権限を最小限に制限する。
 permissions:
+  # リポジトリのコードを読み取る権限のみを許可する。
   contents: read
 
+# Workflow内で実行するJobを定義する。
 jobs:
+  # Jobの識別子。Workflow内部から参照するときに使用する。
   lint:
+    # GitHub Actionsの画面上に表示するJob名。
     name: Oxlint
+
+    # Jobを実行するRunner。GitHubが提供する最新Ubuntu環境を使用する。
     runs-on: ubuntu-latest
 
+    # このJob内のrunコマンドに共通するデフォルト設定を定義する。
     defaults:
       run:
+        # Reactプロジェクトがリポジトリ直下ではなくこのフォルダ内にあるため、
+        # npm ciやnpm run lintの実行ディレクトリをここに固定する。
         working-directory: react-fsd-template
 
+    # Job内で順番に実行する処理を定義する。
     steps:
+      # GitHub ActionsのRunnerへ対象リポジトリのソースコードを取得する。
       - name: Checkout repository
+        # GitHub公式のcheckout Actionを使用する。
         uses: actions/checkout@v6
 
+      # Oxlintを実行するためのNode.js環境を準備する。
       - name: Setup Node.js
+        # GitHub公式のsetup-node Actionを使用する。
         uses: actions/setup-node@v6
         with:
+          # 開発環境と合わせてNode.js 24を使用する。
           node-version: 24
+
+          # npmのダウンロードキャッシュを利用してCIの依存関係取得を高速化する。
           cache: npm
+
+          # package-lock.jsonがサブディレクトリにあるため、
+          # npmキャッシュのキー生成に使用するlockfileを明示する。
           cache-dependency-path: react-fsd-template/package-lock.json
 
+      # package-lock.jsonに固定された依存関係をクリーンインストールする。
       - name: Install dependencies
         run: npm ci
 
+      # package.jsonのlintスクリプトを実行し、Oxlintによる静的解析を行う。
       - name: Run Oxlint
         run: npm run lint
