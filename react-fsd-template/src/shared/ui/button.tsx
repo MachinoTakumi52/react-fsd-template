@@ -2,6 +2,6 @@ type ButtonProps = {
   children: React.ReactNode;
 };
 
-export function Button({ children }: ButtonProps) {
+export const Button = ({ children }: ButtonProps) => {
   return <button className="shared-button">{children}</button>;
-}
+};

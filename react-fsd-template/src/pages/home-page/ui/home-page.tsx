@@ -1,6 +1,6 @@
 import { Button } from "@shared/ui";
 
-export function HomePage() {
+export const HomePage = () => {
   return (
     <main className="home-page">
       <section className="home-page__hero">
@@ -10,4 +10,4 @@ export function HomePage() {
       </section>
     </main>
   );
-}
+};
