@@ -151,6 +151,7 @@ export const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/form-validation" element={<FormValidationPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
@@ -165,6 +166,7 @@ Pageそのものは `pages` に配置し、`routes` ではそれらを組み合�
 | -------- | -------------- |
 | `/`      | `HomePage`     |
 | `/about` | `AboutPage`    |
+| `/form-validation` | `FormValidationPage` |
 | `*`      | `NotFoundPage` |
 
 #### providers
@@ -658,6 +660,55 @@ model/
 ├─ types.ts
 ├─ schema.ts
 └─ store.ts
+```
+
+##### Zodによるバリデーション
+
+入力値の検証にはZodを使用する。
+
+- スキーマは検証対象を利用するSliceの `model` に配置する。
+- 複数のSliceで共有するスキーマだけを `shared` へ移動する。
+- TypeScriptの型はスキーマと重複して定義せず、`z.infer` から生成する。
+- ユーザー入力など、実行時には保証されない値を利用する前に `safeParse` で検証する。
+- React Hook Formでは `zodResolver` を使用し、フォームの値とエラーを一元管理する。
+- MUIのフォームコンポーネントは `Controller` で接続し、値変更時の処理を拡張できる形に統一する。
+- エラーメッセージは `fieldState.error` から取得し、入力項目と関連付けて表示する。
+
+```ts
+import { z } from "zod";
+
+export const contactFormSchema = z.object({
+  name: z.string().trim().min(1, "Name is required."),
+  email: z.email("Enter a valid email address."),
+});
+
+export type ContactFormValues = z.infer<typeof contactFormSchema>;
+```
+
+```ts
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+
+const { control, handleSubmit, formState: { isValid } } = useForm<ContactFormValues>({
+  resolver: zodResolver(contactFormSchema),
+  defaultValues: contactFormDefaultValues,
+  mode: "onChange",
+});
+
+<form onSubmit={handleSubmit(onSubmit)}>
+  <Controller
+    name="name"
+    control={control}
+    render={({ field, fieldState }) => (
+      <TextField
+        {...field}
+        error={Boolean(fieldState.error)}
+        helperText={fieldState.error?.message}
+      />
+    )}
+  />
+  <Button type="submit" disabled={!isValid}>Submit</Button>
+</form>;
 ```
 
 #### api

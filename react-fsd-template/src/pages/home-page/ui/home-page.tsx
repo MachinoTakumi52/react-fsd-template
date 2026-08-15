@@ -1,5 +1,5 @@
+import { Button } from "@mui/material";
 import { Link } from "react-router-dom";
-import { Button } from "@shared/ui";
 
 export const HomePage = () => {
   return (
@@ -10,6 +10,7 @@ export const HomePage = () => {
         <Link to="/about">
           <Button>Open About</Button>
         </Link>
+        <Link to="/form-validation">Open Form Validation Example</Link>
       </section>
     </main>
   );
