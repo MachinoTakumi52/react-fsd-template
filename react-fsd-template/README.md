@@ -713,12 +713,53 @@ const { control, handleSubmit, formState: { isValid } } = useForm<ContactFormVal
 
 #### api
 
-API通信に関する処理を配置する。
+API通信に関する処理を配置する。アプリケーション共通のAxiosクライアントは `shared/api` で管理する。
 
 ```text
-api/
-├─ getUser.ts
-└─ updateUser.ts
+shared/
+└─ api/
+   ├─ api-client.ts
+   ├─ api-error.ts
+   └─ index.ts
+```
+
+Axiosクライアントは次の規約に従う。
+
+- API通信ではグローバルな `axios` を直接使用せず、`apiClient` を使用する。
+- Base URLはモード別の `.env.development` と `.env.production` で `VITE_API_BASE_URL` を設定する。
+- 環境変数の型は `src/vite-env.d.ts` の `ImportMetaEnv` に定義する。
+- timeout、共通headers、interceptorは `api-client.ts` に集約する。
+- Cookieセッション認証を使用し、`withCredentials: true` でCookieをリクエストに含める。
+- APIが別オリジンの場合、サーバー側でcredentialsを許可し、Cookieの `SameSite`・`Secure` 属性を適切に設定する。
+- response interceptorでAxiosエラーを `ApiError` へ変換する。
+- FormDataなどJSON以外を送信する場合は、リクエスト単位で `Content-Type` を上書きする。
+- 個別API関数は利用するPage・Feature・Entityの `api` Segmentに配置する。
+
+開発環境:
+
+```env
+VITE_API_BASE_URL=http://localhost:3000/api
+```
+
+本番環境:
+
+```env
+VITE_API_BASE_URL=/api
+```
+
+```ts
+import { apiClient } from "@shared/api";
+
+type User = {
+  id: string;
+  name: string;
+};
+
+export const getUser = async (userId: string) => {
+  const response = await apiClient.get<User>(`/users/${userId}`);
+
+  return response.data;
+};
 ```
 
 #### lib
