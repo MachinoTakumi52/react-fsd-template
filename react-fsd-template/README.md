@@ -162,12 +162,12 @@ Pageそのものは `pages` に配置し、`routes` ではそれらを組み合�
 
 現在定義しているルートは以下の通り。
 
-| パス     | Page           |
-| -------- | -------------- |
-| `/`      | `HomePage`     |
-| `/about` | `AboutPage`    |
+| パス               | Page                 |
+| ------------------ | -------------------- |
+| `/`                | `HomePage`           |
+| `/about`           | `AboutPage`          |
 | `/form-validation` | `FormValidationPage` |
-| `*`      | `NotFoundPage` |
+| `*`                | `NotFoundPage`       |
 
 #### providers
 
@@ -176,9 +176,8 @@ Pageそのものは `pages` に配置し、`routes` ではそれらを組み合�
 ```text
 app/
 └─ providers/
-   ├─ QueryProvider.tsx
-   ├─ ThemeProvider.tsx
-   └─ AppProviders.tsx
+   ├─ app-providers.tsx
+   └─ index.ts
 ```
 
 例えば以下が対象となる。
@@ -189,15 +188,11 @@ app/
 - アプリケーション全体で使用する状態管理
 - その他アプリケーション全体を囲むProvider
 
-複数のProviderを使用する場合は、`AppProviders` などでまとめて管理してよい。
+複数のProviderを使用する場合は、`AppProviders` などでまとめて管理。
 
 ```tsx
 export const AppProviders = ({ children }: Props) => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>{children}</ThemeProvider>
-    </QueryClientProvider>
-  );
+  return <ErrorNotificationProvider>{children}</ErrorNotificationProvider>;
 };
 ```
 
@@ -729,8 +724,7 @@ Axiosクライアントは次の規約に従う。
 - Base URLはモード別の `.env.development` と `.env.production` で `VITE_API_BASE_URL` を設定する。
 - 環境変数の型は `src/vite-env.d.ts` の `ImportMetaEnv` に定義する。
 - timeout、共通headers、interceptorは `api-client.ts` に集約する。
-- Cookieセッション認証を使用し、`withCredentials: true` でCookieをリクエストに含める。
-- APIが別オリジンの場合、サーバー側でcredentialsを許可し、Cookieの `SameSite`・`Secure` 属性を適切に設定する。
+- 今回は、Cookieセッション認証を採用し、`withCredentials: true` でCookieをリクエストに含める。
 - response interceptorでAxiosエラーを `ApiError` へ変換する。
 - FormDataなどJSON以外を送信する場合は、リクエスト単位で `Content-Type` を上書きする。
 - 個別API関数は利用するPage・Feature・Entityの `api` Segmentに配置する。
@@ -759,6 +753,36 @@ export const getUser = async (userId: string) => {
   const response = await apiClient.get<User>(`/users/${userId}`);
 
   return response.data;
+};
+```
+
+##### 共通エラーハンドリング
+
+エラー表示は画面ごとに文言やUIを実装せず、共通エラーハンドリングを使用する。
+
+- Axiosの通信エラーはresponse interceptorで `ApiError` へ変換する。
+- ユーザー向けメッセージは `getErrorMessage` でHTTPステータスやエラーコードから決定する。
+- URLに対応する画面が存在しない場合のみ `NotFoundPage` を表示する。
+- その他のエラーは `useErrorNotification` から画面右上のSnackbarへ通知する。
+- APIレスポンスの詳細やサーバー内部のメッセージを、そのままユーザーへ表示しない。
+- 画面固有の復旧操作が必要な場合のみ、PageまたはFeatureで個別に処理する。
+
+```ts
+import { useErrorNotification } from "@shared/lib/error";
+import { apiClient } from "@shared/api";
+
+export const Example = () => {
+  const { notifyError } = useErrorNotification();
+
+  const handleClick = async () => {
+    try {
+      await apiClient.get("/example");
+    } catch (error) {
+      notifyError(error);
+    }
+  };
+
+  return <button onClick={handleClick}>APIを呼び出す</button>;
 };
 ```
 

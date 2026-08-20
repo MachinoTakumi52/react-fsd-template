@@ -23,6 +23,10 @@ export class ApiError extends Error {
 
 // Axios固有のエラーを、アプリケーション全体で扱える共通エラーへ変換する。
 export const toApiError = (error: unknown): ApiError => {
+  if (error instanceof ApiError) {
+    return error;
+  }
+
   if (axios.isAxiosError(error)) {
     return new ApiError(error.message, {
       status: error.response?.status,
