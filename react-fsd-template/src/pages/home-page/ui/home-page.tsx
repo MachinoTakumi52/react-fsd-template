@@ -11,6 +11,9 @@ export const HomePage = () => {
           <Button>Open About</Button>
         </Link>
         <Link to="/form-validation">Open Form Validation Example</Link>
+        <Link to="/login">
+          <Button>Login</Button>
+        </Link>
       </section>
     </main>
   );

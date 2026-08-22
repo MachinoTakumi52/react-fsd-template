@@ -727,7 +727,17 @@ Axiosクライアントは次の規約に従う。
 - 今回は、Cookieセッション認証を採用し、`withCredentials: true` でCookieをリクエストに含める。
 - response interceptorでAxiosエラーを `ApiError` へ変換する。
 - FormDataなどJSON以外を送信する場合は、リクエスト単位で `Content-Type` を上書きする。
-- 個別API関数は利用するPage・Feature・Entityの `api` Segmentに配置する。
+- 個別API関数とrequest / response型は、利用するPage・Feature・Entityの `api` Segmentに配置する。
+
+`shared/api` の責務は、特定の業務ドメインに依存しない通信基盤に限定する。
+
+| `shared/api` に置く | 各Sliceの `api` に置く |
+| --- | --- |
+| Axiosクライアントと共通設定 | エンドポイントのパス |
+| request / response interceptor | 個別のAPI関数 |
+| 共通エラー型 | 業務固有のrequest / response型 |
+
+`User`、`Order`、`LoginResult` などの業務固有型や、`/users` などのエンドポイントを `shared/api` に置かない。
 
 開発環境:
 
@@ -741,18 +751,58 @@ VITE_API_BASE_URL=http://localhost:3000/api
 VITE_API_BASE_URL=/api
 ```
 
+##### Featureからの利用例
+
+Featureの `api` Segmentから `shared/api` のクライアントを利用する。
+
+```text
+features/
+└─ login/
+   ├─ api/
+   │  └─ login.ts
+   └─ index.ts
+```
+
 ```ts
+// features/login/api/login.ts
 import { apiClient } from "@shared/api";
 
-type User = {
+type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+type LoginResult = {
   id: string;
   name: string;
 };
 
-export const getUser = async (userId: string) => {
-  const response = await apiClient.get<User>(`/users/${userId}`);
+export const login = async (input: LoginRequest): Promise<LoginResult> => {
+  const response = await apiClient.post<LoginResult>("/auth/login", input);
 
   return response.data;
+};
+```
+
+Feature外へ公開するAPIはSlice直下のPublic APIへ追加する。
+
+```ts
+// features/login/index.ts
+export { login } from "./api/login";
+```
+
+利用側は `shared/api` やFeature内部を直接参照せず、FeatureのPublic APIを使用する。
+
+```ts
+import { login } from "@features/login";
+
+const handleLogin = async () => {
+  const user = await login({
+    email: "user@example.com",
+    password: "password",
+  });
+
+  return user;
 };
 ```
 
