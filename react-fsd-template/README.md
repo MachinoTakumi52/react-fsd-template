@@ -369,8 +369,6 @@ Header
 
 `features` は、**ユーザーが行う業務上の操作**を表現するLayerである。
 
-基本的には **業務上の動詞** と考える。
-
 ```text
 Search User
 Update User
@@ -731,11 +729,11 @@ Axiosクライアントは次の規約に従う。
 
 `shared/api` の責務は、特定の業務ドメインに依存しない通信基盤に限定する。
 
-| `shared/api` に置く | 各Sliceの `api` に置く |
-| --- | --- |
-| Axiosクライアントと共通設定 | エンドポイントのパス |
-| request / response interceptor | 個別のAPI関数 |
-| 共通エラー型 | 業務固有のrequest / response型 |
+| `shared/api` に置く            | 各Sliceの `api` に置く         |
+| ------------------------------ | ------------------------------ |
+| Axiosクライアントと共通設定    | エンドポイントのパス           |
+| request / response interceptor | 個別のAPI関数                  |
+| 共通エラー型                   | 業務固有のrequest / response型 |
 
 `User`、`Order`、`LoginResult` などの業務固有型や、`/users` などのエンドポイントを `shared/api` に置かない。
 
@@ -805,6 +803,45 @@ const handleLogin = async () => {
   return user;
 };
 ```
+
+##### 開発用Axios mock
+
+バックエンドを起動せずにAPI通信を確認したい場合は、開発サーバーを起動する。
+
+```bash
+npm run dev
+```
+
+`import.meta.env.DEV` が `true` の場合のみ、アプリケーションの描画前にAxios mockが有効になる。本番buildではモック用モジュールを読み込まない。
+
+ログイン画面（`/login`）では次の値を使用すると、`POST /auth/login` の成功レスポンスを確認できる。
+
+```text
+メールアドレス: user@example.com
+パスワード: password
+```
+
+上記以外の値では401レスポンスを返すため、共通エラー通知も確認できる。
+
+```text
+app/
+└─ mocks/
+   └─ enable-api-mock.ts
+features/
+└─ login/
+   └─ api/
+      ├─ login.ts
+      └─ login.mock.ts
+```
+
+Axios mockは次の規約に従う。
+
+- Axios Mock Adapterの生成と全モックの登録は、Composition Rootである `app/mocks` に集約する。
+- 業務固有のモックハンドラーは、対象Sliceの `api` Segmentへ `*.mock.ts` として配置する。
+- モックでも本番APIと同じrequest / response型を使用する。
+- 未登録のAPIは `onNoMatch: "passthrough"` により実際のAPIへ送信する。
+- モックの初期化は `main.tsx` で描画前に完了させ、初回リクエストを取りこぼさない。
+- モック用ファイルをPageやFeatureのPublic APIから公開しない。
 
 ##### 共通エラーハンドリング
 

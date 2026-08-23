@@ -1,20 +1,22 @@
 import { apiClient } from "@shared/api";
 
+export const LOGIN_API_PATH = "/auth/login";
+
 /** ログインAPIへ送信するリクエスト */
-type LoginRequest = {
+export type LoginRequest = {
   email: string;
   password: string;
 };
 
 /** ログインAPIから受け取るレスポンス */
-type LoginResponse = {
+export type LoginResponse = {
   id: string;
   name: string;
 };
 
 /** メールアドレスとパスワードを使用してログインする */
 export const login = async (input: LoginRequest): Promise<LoginResponse> => {
-  const response = await apiClient.post<LoginResponse>("/auth/login", input);
+  const response = await apiClient.post<LoginResponse>(LOGIN_API_PATH, input);
 
   return response.data;
 };
