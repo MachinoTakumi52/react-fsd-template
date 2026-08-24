@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint --config ./oxlint.config.ts",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -23,13 +26,19 @@
     "zod": "~4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.6",
     "@types/node": "~24.13.3",
     "@types/react": "~19.2.17",
     "@types/react-dom": "~19.2.3",
     "@vitejs/plugin-react": "~6.0.4",
     "axios-mock-adapter": "^2.1.0",
+    "jsdom": "^30.0.1",
     "oxlint": "~1.75.0",
     "typescript": "~6.0.2",
-    "vite": "~8.2.0"
+    "vite": "~8.2.0",
+    "vitest": "^4.1.11"
   }
 }

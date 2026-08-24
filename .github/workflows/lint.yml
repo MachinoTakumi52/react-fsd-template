@@ -1,5 +1,5 @@
 # GitHub Actions上で表示されるWorkflow名。
-name: Oxlint
+name: Quality Check
 
 # Workflowを実行するタイミングを定義する。
 on:
@@ -17,9 +17,9 @@ permissions:
 # Workflow内で実行するJobを定義する。
 jobs:
   # Jobの識別子。Workflow内部から参照するときに使用する。
-  lint:
+  quality:
     # GitHub Actionsの画面上に表示するJob名。
-    name: Oxlint
+    name: Lint, Build and Test
 
     # Jobを実行するRunner。GitHubが提供する最新Ubuntu環境を使用する。
     runs-on: ubuntu-latest
@@ -60,3 +60,11 @@ jobs:
       # package.jsonのlintスクリプトを実行し、Oxlintによる静的解析を行う。
       - name: Run Oxlint
         run: npm run lint
+
+      # TypeScriptの型チェックと本番用buildが成功することを確認する。
+      - name: Build application
+        run: npm run build
+
+      # VitestでUnit TestとIntegration Testを実行する。
+      # E2E Testは現時点ではCI対象外とし、ローカルで必要に応じて実行する。
+      - name: Run Unit and Integration tests
