@@ -35,8 +35,8 @@ export default defineConfig({
     // General
     // ------------------------------------------------------------
 
-    // 使用していない import や変数は warn で見えるようにする。
-    "no-unused-vars": "warn",
+    // 使用していない import や変数を残さないよう、error として検出する。
+    "no-unused-vars": "error",
 
     // var ではなく const / let を強制する。
     "no-var": "error",
