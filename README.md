@@ -4,6 +4,18 @@
 UI ライブラリには Material UI、フォーム管理には React Hook Form、バリデーションには Zod を採用していいる。  
 FSDについてと開発規約については[このリンク](https://github.com/MachinoTakumi52/react-fsd-template/tree/main/react-fsd-template#%E3%83%95%E3%83%AD%E3%83%B3%E3%83%88%E3%82%A8%E3%83%B3%E3%83%89%E9%96%8B%E7%99%BA%E8%A6%8F%E7%B4%84)を参照
 
+## エージェントを使った開発の流れ
+
+1. [指示テンプレート](TASK_TEMPLATE.md)に沿って Codex に依頼する。Codex は [AGENTS.md](AGENTS.md) に沿って実装・検証する。
+2. 実装と検証が完了したら、Codex が作成したドラフト PR の差分と検証結果を確認し、マージする。
+3. 検証を続けられない場合は、Codex が起票した Issue を GitHub の通知やチャットで共有されたリンクから確認する。
+
+### ブランチ運用
+
+- 開発の起点ブランチは `main`。
+- PR のマージ先は `main`。
+- テンプレートから作ったプロジェクトでブランチ運用を変える場合は、この節と [Quality Check の対象ブランチ](.github/workflows/lint.yml) を更新する。
+
 ## 開発の流れ
 
 ### コンテナを立ち上げる
