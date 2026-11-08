@@ -4,6 +4,19 @@
 UI ライブラリには Material UI、フォーム管理には React Hook Form、バリデーションには Zod を採用していいる。  
 FSDについてと開発規約については[このリンク](https://github.com/MachinoTakumi52/react-fsd-template/tree/main/react-fsd-template#%E3%83%95%E3%83%AD%E3%83%B3%E3%83%88%E3%82%A8%E3%83%B3%E3%83%89%E9%96%8B%E7%99%BA%E8%A6%8F%E7%B4%84)を参照
 
+## エージェントを使った開発の流れ
+
+1. [指示テンプレート](TASK_TEMPLATE.md)をコピーし、目的・変更内容・合格条件を記入して Codex に渡す。依頼を Issue で管理する場合も、同じ形式を使える。
+2. Codex は開発ブランチから `{作業内容}-agent` 形式の作業ブランチを切る（例: `add-button-agent`）。作業ブランチで実装し、[AGENTS.md](AGENTS.md) に沿って検証する。
+3. 合格条件を満たしたら、Codex が[PR テンプレート](.github/pull_request_template.md)に沿ってドラフト PR を作成する。PR 本文には依頼時の合格条件と検証結果を記載する。最終レビューとマージは人が行う。
+4. 同じ検証失敗が、原因に対する修正を 2 回試しても解消しない場合は、Codex が Issue を起票して作業を止める。環境や権限が原因で先に進めない場合は、その時点で起票する。未達の条件や試した修正は Issue に記録し、チャットにも Issue の URL を返す。
+
+### ブランチ運用
+
+- 開発の起点ブランチは `main`。
+- PR のマージ先は `main`。
+- テンプレートから作ったプロジェクトでブランチ運用を変える場合は、この節と [Quality Check の対象ブランチ](.github/workflows/lint.yml) を更新する。
+
 ## 開発の流れ
 
 ### コンテナを立ち上げる
