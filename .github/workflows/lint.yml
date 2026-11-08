@@ -68,3 +68,4 @@ jobs:
       # VitestでUnit TestとIntegration Testを実行する。
       # E2E Testは現時点ではCI対象外とし、ローカルで必要に応じて実行する。
       - name: Run Unit and Integration tests
+        run: npm test
